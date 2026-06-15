@@ -26,7 +26,7 @@ function initFirebase() {
   }
 }
 
-// Obter as datas de Hoje e Amanhã formatadas no padrão YYYY-MM-DD no fuso de Brasília
+// Obter as datas dos prazos formatadas no padrão YYYY-MM-DD no fuso de Brasília
 function getDeadlines() {
   const now = new Date();
   
@@ -40,33 +40,70 @@ function getDeadlines() {
   
   const todayStr = formatter.format(now);
   
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = formatter.format(tomorrow);
+  // 1 dia antes (Amanhã)
+  const d1 = new Date(now);
+  d1.setDate(d1.getDate() + 1);
+  const tomorrowStr = formatter.format(d1);
   
-  return { todayStr, tomorrowStr };
+  // 3 dias antes
+  const d3 = new Date(now);
+  d3.setDate(d3.getDate() + 3);
+  const in3DaysStr = formatter.format(d3);
+  
+  // 7 dias antes (1 semana)
+  const d7 = new Date(now);
+  d7.setDate(d7.getDate() + 7);
+  const in7DaysStr = formatter.format(d7);
+  
+  return { todayStr, tomorrowStr, in3DaysStr, in7DaysStr };
 }
 
-// Criar Template HTML Moderno e Premium para o E-mail
-function buildEmailHtml(userName, todayTasks, tomorrowTasks, overdueTasks) {
+// Criar Template HTML Moderno e Premium para o E-mail (Compatível com Gmail/Outlook)
+function buildEmailHtml(userName, todayTasks, tomorrowTasks, overdueTasks, in3DaysTasks, in7DaysTasks) {
   const formatTaskRow = (task) => {
-    const priorityColors = {
-      Alta: "#ef4444",
-      Média: "#f59e0b",
-      Baixa: "#10b981"
+    // Definir as cores e fundos específicos de prioridade para modo escuro compatível
+    const priorityStyles = {
+      Alta: {
+        border: "#ef4444",
+        bg: "#2d1b1e",
+        text: "#f87171"
+      },
+      Média: {
+        border: "#f59e0b",
+        bg: "#2d2415",
+        text: "#fb923c"
+      },
+      Baixa: {
+        border: "#10b981",
+        bg: "#152a21",
+        text: "#34d399"
+      }
     };
-    const pColor = priorityColors[task.priority] || "#3b82f6";
+    
+    const style = priorityStyles[task.priority] || { border: "#3b82f6", bg: "#1e293b", text: "#60a5fa" };
     
     return `
-      <div style="background-color: #1e293b; padding: 16px; border-radius: 12px; margin-bottom: 12px; border-left: 4px solid ${pColor}; border: 1px solid rgba(255, 255, 255, 0.05); border-left: 4px solid ${pColor};">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-          <h4 style="margin: 0; font-size: 16px; color: #f8fafc; font-weight: 600;">${task.title}</h4>
-          <span style="font-size: 11px; font-weight: 700; color: #ffffff; background-color: ${pColor}; padding: 2px 8px; border-radius: 6px; text-transform: uppercase;">${task.priority || "Normal"}</span>
-        </div>
-        ${task.description ? `<p style="margin: 0 0 10px 0; font-size: 14px; color: #94a3b8; line-height: 1.4;">${task.description}</p>` : ""}
-        <div style="font-size: 12px; color: #64748b;">
-          📅 Prazo: <strong style="color: #cbd5e1;">${new Date(task.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}</strong>
-        </div>
+      <div style="background-color: #111827; padding: 18px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #1f2937; border-left: 4px solid ${style.border};">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td>
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td>
+                    <h4 style="margin: 0; font-size: 15px; color: #f9fafb; font-weight: 600; font-family: sans-serif;">${task.title}</h4>
+                  </td>
+                  <td align="right" style="width: 80px;">
+                    <span style="font-size: 10px; font-weight: bold; font-family: sans-serif; color: ${style.text}; background-color: ${style.bg}; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">${task.priority || "Média"}</span>
+                  </td>
+                </tr>
+              </table>
+              ${task.description ? `<p style="margin: 8px 0 12px 0; font-size: 13px; color: #9ca3af; line-height: 1.5; font-family: sans-serif;">${task.description}</p>` : `<div style="height: 8px;"></div>`}
+              <div style="font-size: 12px; color: #6b7280; font-family: sans-serif;">
+                📅 Prazo: <strong style="color: #d1d5db;">${new Date(task.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}</strong>
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
     `;
   };
@@ -75,22 +112,41 @@ function buildEmailHtml(userName, todayTasks, tomorrowTasks, overdueTasks) {
 
   if (overdueTasks.length > 0) {
     tasksSectionHtml += `
-      <h3 style="color: #ef4444; font-size: 16px; text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 12px 0; border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 6px;">🚨 Atrasadas (${overdueTasks.length})</h3>
+      <div style="margin: 28px 0 10px 0; font-size: 12px; font-weight: 700; color: #ef4444; letter-spacing: 0.08em; text-transform: uppercase; font-family: sans-serif;">🚨 Atrasadas (${overdueTasks.length})</div>
+      <div style="height: 1px; background-color: #1f2937; margin-bottom: 14px;"></div>
       ${overdueTasks.map(formatTaskRow).join("")}
     `;
   }
 
   if (todayTasks.length > 0) {
     tasksSectionHtml += `
-      <h3 style="color: #f59e0b; font-size: 16px; text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 12px 0; border-bottom: 1px solid rgba(245, 158, 11, 0.2); padding-bottom: 6px;">⚠️ Vencem Hoje (${todayTasks.length})</h3>
+      <div style="margin: 28px 0 10px 0; font-size: 12px; font-weight: 700; color: #f59e0b; letter-spacing: 0.08em; text-transform: uppercase; font-family: sans-serif;">⚠️ Vencem Hoje (${todayTasks.length})</div>
+      <div style="height: 1px; background-color: #1f2937; margin-bottom: 14px;"></div>
       ${todayTasks.map(formatTaskRow).join("")}
     `;
   }
 
   if (tomorrowTasks.length > 0) {
     tasksSectionHtml += `
-      <h3 style="color: #3b82f6; font-size: 16px; text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 12px 0; border-bottom: 1px solid rgba(59, 130, 246, 0.2); padding-bottom: 6px;">📅 Vencem Amanhã (${tomorrowTasks.length})</h3>
+      <div style="margin: 28px 0 10px 0; font-size: 12px; font-weight: 700; color: #3b82f6; letter-spacing: 0.08em; text-transform: uppercase; font-family: sans-serif;">📅 Vencem Amanhã / 1 Dia (${tomorrowTasks.length})</div>
+      <div style="height: 1px; background-color: #1f2937; margin-bottom: 14px;"></div>
       ${tomorrowTasks.map(formatTaskRow).join("")}
+    `;
+  }
+
+  if (in3DaysTasks.length > 0) {
+    tasksSectionHtml += `
+      <div style="margin: 28px 0 10px 0; font-size: 12px; font-weight: 700; color: #fb923c; letter-spacing: 0.08em; text-transform: uppercase; font-family: sans-serif;">⏳ Vencem em 3 Dias (${in3DaysTasks.length})</div>
+      <div style="height: 1px; background-color: #1f2937; margin-bottom: 14px;"></div>
+      ${in3DaysTasks.map(formatTaskRow).join("")}
+    `;
+  }
+
+  if (in7DaysTasks.length > 0) {
+    tasksSectionHtml += `
+      <div style="margin: 28px 0 10px 0; font-size: 12px; font-weight: 700; color: #10b981; letter-spacing: 0.08em; text-transform: uppercase; font-family: sans-serif;">🔔 Vencem em 1 Semana (${in7DaysTasks.length})</div>
+      <div style="height: 1px; background-color: #1f2937; margin-bottom: 14px;"></div>
+      ${in7DaysTasks.map(formatTaskRow).join("")}
     `;
   }
 
@@ -104,40 +160,40 @@ function buildEmailHtml(userName, todayTasks, tomorrowTasks, overdueTasks) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Lembrete UniTask</title>
     </head>
-    <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-font-smoothing: antialiased;">
-      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0f172a; padding: 32px 16px;">
+    <body style="margin: 0; padding: 0; background-color: #030712; color: #f3f4f6; -webkit-font-smoothing: antialiased; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #030712; padding: 40px 12px;">
         <tr>
           <td align="center">
-            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #0b0f19; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #0b0f19; border-radius: 16px; overflow: hidden; border: 1px solid #1f2937; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
               
               <!-- Header -->
               <tr>
-                <td align="center" style="background: linear-gradient(135deg, #1e293b 0%, #0b0f19 100%); padding: 32px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-                  <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.025em; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: #3b82f6;">UniTask 🎓</h1>
-                  <p style="margin: 8px 0 0 0; font-size: 14px; color: #94a3b8; font-weight: 500;">Organização acadêmica inteligente</p>
+                <td align="center" style="background-color: #0b0f19; padding: 36px 20px 24px 20px; border-bottom: 1px solid #1f2937;">
+                  <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #3b82f6; font-family: sans-serif; letter-spacing: -0.02em;">UniTask 🎓</h1>
+                  <p style="margin: 6px 0 0 0; font-size: 13px; color: #6b7280; font-weight: 500; font-family: sans-serif;">Organização acadêmica inteligente</p>
                 </td>
               </tr>
               
               <!-- Corpo do e-mail -->
               <tr>
-                <td style="padding: 32px 24px;">
-                  <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 700; color: #f8fafc;">Olá, ${userName}! 👋</h2>
-                  <p style="margin: 0 0 24px 0; font-size: 15px; color: #94a3b8; line-height: 1.5;">Aqui está o resumo diário de suas atividades acadêmicas pendentes que exigem sua atenção:</p>
+                <td style="padding: 36px 24px;">
+                  <h2 style="margin: 0 0 10px 0; font-size: 19px; font-weight: 700; color: #ffffff; font-family: sans-serif;">Olá, ${userName}! 👋</h2>
+                  <p style="margin: 0 0 24px 0; font-size: 14px; color: #9ca3af; line-height: 1.5; font-family: sans-serif;">Aqui está o resumo diário de suas atividades acadêmicas pendentes que exigem sua atenção:</p>
                   
                   ${tasksSectionHtml}
                   
                   <!-- CTA -->
                   <div align="center" style="margin-top: 36px;">
-                    <a href="${appUrl}" target="_blank" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.25);">Acessar Meu Painel</a>
+                    <a href="${appUrl}" target="_blank" style="background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block; font-family: sans-serif;">Acessar Meu Painel</a>
                   </div>
                 </td>
               </tr>
               
               <!-- Footer -->
               <tr>
-                <td align="center" style="background-color: #0b0f19; padding: 24px; border-top: 1px solid rgba(255, 255, 255, 0.03);">
-                  <p style="margin: 0; font-size: 12px; color: #475569;">Este e-mail é gerado automaticamente pelo UniTask. Não responda diretamente a esta mensagem.</p>
-                  <p style="margin: 6px 0 0 0; font-size: 12px; color: #3b82f6;"><a href="${appUrl}" style="color: #3b82f6; text-decoration: none;">Visitar site</a></p>
+                <td align="center" style="background-color: #0b0f19; padding: 24px; border-top: 1px solid #1f2937;">
+                  <p style="margin: 0; font-size: 11px; color: #4b5563; font-family: sans-serif; line-height: 1.4;">Este e-mail é gerado automaticamente pelo UniTask. Não responda diretamente a esta mensagem.</p>
+                  <p style="margin: 8px 0 0 0; font-size: 12px; font-family: sans-serif;"><a href="${appUrl}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">Acessar Painel do UniTask</a></p>
                 </td>
               </tr>
               
@@ -151,10 +207,10 @@ function buildEmailHtml(userName, todayTasks, tomorrowTasks, overdueTasks) {
 }
 
 // Enviar e-mail usando Resend ou SMTP
-async function sendEmail(to, name, todayTasks, tomorrowTasks, overdueTasks) {
-  const totalCount = todayTasks.length + tomorrowTasks.length + overdueTasks.length;
+async function sendEmail(to, name, todayTasks, tomorrowTasks, overdueTasks, in3DaysTasks, in7DaysTasks) {
+  const totalCount = todayTasks.length + tomorrowTasks.length + overdueTasks.length + in3DaysTasks.length + in7DaysTasks.length;
   const subject = `🎓 Lembrete UniTask: você tem ${totalCount} tarefa(s) pendente(s)`;
-  const html = buildEmailHtml(name, todayTasks, tomorrowTasks, overdueTasks);
+  const html = buildEmailHtml(name, todayTasks, tomorrowTasks, overdueTasks, in3DaysTasks, in7DaysTasks);
 
   // 1. Tentar usar SMTP se configurado
   if (process.env.SMTP_HOST) {
@@ -208,8 +264,8 @@ async function main() {
   initFirebase();
   const db = admin.firestore();
   
-  const { todayStr, tomorrowStr } = getDeadlines();
-  console.log(`📅 Analisando datas: Hoje=${todayStr}, Amanhã=${tomorrowStr}`);
+  const { todayStr, tomorrowStr, in3DaysStr, in7DaysStr } = getDeadlines();
+  console.log(`📅 Analisando datas: Hoje=${todayStr}, Amanhã=${tomorrowStr}, Em 3 Dias=${in3DaysStr}, Em 1 Semana=${in7DaysStr}`);
 
   try {
     // 1. Obter todos os usuários cadastrados no Firebase Auth
@@ -238,7 +294,7 @@ async function main() {
     const tasksSnapshot = await db.collection("tasks").get();
     
     // Organizar as tarefas por UID do usuário
-    const userTasks = new Map(); // uid -> { today: [], tomorrow: [], overdue: [] }
+    const userTasks = new Map(); // uid -> { today: [], tomorrow: [], overdue: [], in3Days: [], in7Days: [] }
     
     tasksSnapshot.forEach(doc => {
       const task = doc.data();
@@ -250,7 +306,7 @@ async function main() {
       
       // Inicializar agrupamento para o usuário se não existir
       if (!userTasks.has(uid)) {
-        userTasks.set(uid, { today: [], tomorrow: [], overdue: [] });
+        userTasks.set(uid, { today: [], tomorrow: [], overdue: [], in3Days: [], in7Days: [] });
       }
       
       const userGroup = userTasks.get(uid);
@@ -259,6 +315,10 @@ async function main() {
         userGroup.today.push(task);
       } else if (task.dueDate === tomorrowStr) {
         userGroup.tomorrow.push(task);
+      } else if (task.dueDate === in3DaysStr) {
+        userGroup.in3Days.push(task);
+      } else if (task.dueDate === in7DaysStr) {
+        userGroup.in7Days.push(task);
       } else if (task.dueDate < todayStr) {
         userGroup.overdue.push(task);
       }
@@ -276,11 +336,11 @@ async function main() {
         continue;
       }
       
-      const totalCount = groups.today.length + groups.tomorrow.length + groups.overdue.length;
+      const totalCount = groups.today.length + groups.tomorrow.length + groups.overdue.length + groups.in3Days.length + groups.in7Days.length;
       
       if (totalCount > 0) {
         try {
-          await sendEmail(user.email, user.displayName, groups.today, groups.tomorrow, groups.overdue);
+          await sendEmail(user.email, user.displayName, groups.today, groups.tomorrow, groups.overdue, groups.in3Days, groups.in7Days);
           sentCount++;
         } catch (emailError) {
           console.error(`❌ Erro ao enviar e-mail para ${user.email}:`, emailError.message);
