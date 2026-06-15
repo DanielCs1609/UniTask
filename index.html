@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="UniTask - Organize seus trabalhos acadêmicos de forma profissional"
+    />
+    <meta name="theme-color" content="#6366f1" />
+
+    <title>UniTask - Gestor de Tarefas Acadêmicas</title>
+
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="icon" href="assets/logo-icon.png" type="image/png" />
+  </head>
+  <body data-theme="dark">
+    <!-- Loader -->
+    <div id="loader"></div>
+
+    <!-- Container Principal -->
+    <div class="auth-container">
+      <div class="auth-card">
+        <!-- Logo -->
+        <div class="auth-logo">
+          <img src="assets/logo_nobg.png" alt="UniTask Logo" style="margin-bottom: var(--spacing-md); width: 40%; max-width: 100%; object-fit: contain;">
+          <p>Organize seus trabalhos acadêmicos</p>
+        </div>
+
+        <!-- Conteúdo Inicial -->
+        <div style="text-align: center; margin-bottom: var(--spacing-2xl)">
+          <p
+            style="
+              color: var(--color-text-secondary);
+              margin-bottom: var(--spacing-lg);
+            "
+          >
+            Bem-vindo ao UniTask! A plataforma moderna para organizar seus
+            trabalhos e tarefas acadêmicas.
+          </p>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr;
+              gap: var(--spacing-md);
+            "
+          >
+            <p style="font-size: 0.875rem; color: var(--color-text-light)">
+              ✓ Organize tarefas por matéria
+            </p>
+            <p style="font-size: 0.875rem; color: var(--color-text-light)">
+              ✓ Receba alertas de prazos próximos
+            </p>
+            <p style="font-size: 0.875rem; color: var(--color-text-light)">
+              ✓ Acompanhe seu progresso em tempo real
+            </p>
+          </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--spacing-md);
+          "
+        >
+          <button
+            class="btn btn-primary"
+            onclick="window.location.href = 'login.html'"
+          >
+            Começar Agora
+          </button>
+          <button class="btn btn-secondary" onclick="scrollToFeatures()">
+            Saiba Mais
+          </button>
+        </div>
+
+        <!-- Rodapé -->
+        <div
+          style="
+            text-align: center;
+            margin-top: var(--spacing-2xl);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--color-border);
+          "
+        >
+          <p
+            style="
+              font-size: 0.875rem;
+              color: var(--color-text-light);
+              margin: 0;
+            "
+          >
+            UniTask © 2024 - Todos os direitos reservados
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ============================================
+      // Tema (Light/Dark)
+      // ============================================
+
+      function initTheme() {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      }
+
+      function toggleTheme() {
+        const currentTheme =
+          document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+      }
+
+      function scrollToFeatures() {
+        alert("Faça login para começar a organizar suas tarefas!");
+        window.location.href = "login.html";
+      }
+
+      // Inicializar tema ao carregar
+      initTheme();
+
+      // ============================================
+      // Verificar se já está autenticado
+      // ============================================
+
+      // Importar Firebase e verificar autenticação
+      import { setupAuthListener } from "./js/firebase.js";
+
+      setupAuthListener((user) => {
+        if (user) {
+          console.log("✓ Usuário já autenticado. Redirecionando...");
+          window.location.href = "dashboard.html";
+        }
+      });
+    </script>
+  </body>
+</html>

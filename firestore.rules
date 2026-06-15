@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function ownsData(data) {
+      return isSignedIn() && request.auth.uid == data.uid;
+    }
+
+    function taskHasValidSubject(data) {
+      return !data.keys().hasAny(["subjectId"])
+        || data.subjectId == ""
+        || exists(/databases/$(database)/documents/users/$(request.auth.uid)/subjects/$(data.subjectId));
+    }
+
+    // Regras para tarefas
+    match /tasks/{taskId} {
+      // Permitir leitura/escrita apenas do proprietário
+      allow read, delete: if ownsData(resource.data);
+      allow update: if ownsData(resource.data)
+        && request.resource.data.uid == resource.data.uid
+        && taskHasValidSubject(request.resource.data);
+      
+      // Permitir criação com uid do usuário
+      allow create: if ownsData(request.resource.data)
+        && taskHasValidSubject(request.resource.data);
+    }
+
+    // Regras para matérias/categorias por usuário
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+
+      match /subjects/{subjectId} {
+        allow read, delete: if isSignedIn() && request.auth.uid == userId;
+        allow update: if isSignedIn()
+          && request.auth.uid == userId
+          && request.resource.data.uid == userId;
+        allow create: if isSignedIn()
+          && request.auth.uid == userId
+          && request.resource.data.uid == userId;
+      }
+    }
+  }
+}

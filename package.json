@@ -1,0 +1,31 @@
+{
+  "name": "unitask",
+  "version": "1.0.0",
+  "description": "UniTask - Sistema Web de Gerenciamento de Tarefas Acadêmicas",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "serve": "firebase serve --host 0.0.0.0 --port 5000",
+    "deploy": "firebase deploy --only hosting",
+    "build": "echo 'No build step required for static hosting'",
+    "start": "firebase emulators:start --only hosting"
+  },
+  "keywords": [
+    "tasks",
+    "academic",
+    "firebase",
+    "web-app",
+    "estudantes"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "firebase-tools": "^13.0.0"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/unitask.git"
+  },
+  "homepage": "https://unitask-app.firebaseapp.com"
+}

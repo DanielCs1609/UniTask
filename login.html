@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Login e Cadastro - UniTask" />
+
+    <title>Login - UniTask</title>
+
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="icon" href="assets/logo-64x64.png" type="image/png" />
+  </head>
+  <body data-theme="dark">
+    <!-- Loader -->
+    <div id="loader"></div>
+
+    <!-- Container Principal -->
+    <div class="auth-container">
+      <div class="auth-card">
+        <!-- Logo -->
+        <div class="auth-logo">
+          <img src="assets/logo_nobg.png" alt="UniTask Logo" style="margin-bottom: var(--spacing-md); width: 40%; max-width: 100%; object-fit: contain;">
+          <p>Organize seus trabalhos acadêmicos</p>
+        </div>
+
+        <!-- Abas de Login/Cadastro -->
+        <div
+          style="
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+            border-bottom: 2px solid var(--color-border);
+          "
+        >
+          <button
+            class="tab-btn active"
+            onclick="switchTab('login')"
+            id="loginTab"
+          >
+            Entrar
+          </button>
+          <button
+            class="tab-btn"
+            onclick="switchTab('register')"
+            id="registerTab"
+          >
+            Cadastro
+          </button>
+        </div>
+
+        <!-- Login com Google (visível em ambas as abas) -->
+        <button
+          type="button"
+          class="btn btn-google"
+          onclick="loginWithGoogleHandler()"
+        >
+          <i class="fa-brands fa-google"></i> Entrar com Google
+        </button>
+
+        <!-- Separador -->
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin: var(--spacing-lg) 0;
+          "
+        >
+          <div
+            style="flex: 1; height: 1px; background-color: var(--color-border)"
+          ></div>
+          <span style="color: var(--color-text-light); font-size: 0.875rem"
+            >OU</span
+          >
+          <div
+            style="flex: 1; height: 1px; background-color: var(--color-border)"
+          ></div>
+        </div>
+
+        <!-- Formulário de Login -->
+        <form id="loginForm" class="auth-form" style="display: flex">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input
+              type="email"
+              id="loginEmail"
+              placeholder="seu@email.com"
+              required
+            />
+            <span class="form-error" id="loginEmailError"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword">Senha</label>
+            <input
+              type="password"
+              id="loginPassword"
+              placeholder="••••••••"
+              required
+            />
+            <span class="form-error" id="loginPasswordError"></span>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%">
+            Entrar
+          </button>
+        </form>
+
+        <!-- Formulário de Cadastro -->
+        <form id="registerForm" class="auth-form" style="display: none">
+          <div class="form-group">
+            <label for="registerName">Nome Completo</label>
+            <input
+              type="text"
+              id="registerName"
+              placeholder="Seu Nome Completo"
+              required
+            />
+            <span class="form-error" id="registerNameError"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail">Email</label>
+            <input
+              type="email"
+              id="registerEmail"
+              placeholder="seu@email.com"
+              required
+            />
+            <span class="form-error" id="registerEmailError"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword">Senha</label>
+            <input
+              type="password"
+              id="registerPassword"
+              placeholder="••••••••"
+              required
+            />
+            <span class="form-error" id="registerPasswordError"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="registerPasswordConfirm">Confirmar Senha</label>
+            <input
+              type="password"
+              id="registerPasswordConfirm"
+              placeholder="••••••••"
+              required
+            />
+            <span class="form-error" id="registerPasswordConfirmError"></span>
+          </div>
+
+          <div class="auth-requirements">
+            <p id="reqLength"><i class="fa-solid fa-circle-check"></i> Mínimo 6 caracteres</p>
+            <p id="reqEmail"><i class="fa-solid fa-circle-check"></i> Email válido</p>
+            <p id="reqMatch"><i class="fa-solid fa-circle-check"></i> Senhas iguais</p>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%">
+            Criar Conta
+          </button>
+        </form>
+
+        <!-- Voltar -->
+        <div style="text-align: center; margin-top: var(--spacing-lg)">
+          <a
+            href="index.html"
+            style="
+              color: var(--color-primary);
+              text-decoration: none;
+              font-size: 0.875rem;
+            "
+          >
+            ← Voltar para o início
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+      import {
+        loginUser,
+        registerUser,
+        loginWithGoogle,
+        showToast,
+      } from "./js/auth.js";
+      import { setupAuthListener } from "./js/firebase.js";
+
+      let isRegistering = false;
+
+      // ============================================
+      // Tema (Light/Dark)
+      // ============================================
+
+      function initTheme() {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      }
+
+      initTheme();
+
+      // ============================================
+      // Alternar entre abas
+      // ============================================
+
+      window.switchTab = function (tab) {
+        const loginForm = document.getElementById("loginForm");
+        const registerForm = document.getElementById("registerForm");
+        const loginTab = document.getElementById("loginTab");
+        const registerTab = document.getElementById("registerTab");
+
+        if (tab === "login") {
+          loginForm.style.display = "flex";
+          registerForm.style.display = "none";
+          loginTab.classList.add("active");
+          registerTab.classList.remove("active");
+        } else {
+          loginForm.style.display = "none";
+          registerForm.style.display = "flex";
+          loginTab.classList.remove("active");
+          registerTab.classList.add("active");
+        }
+
+        // Limpar erros
+        document
+          .querySelectorAll(".form-error")
+          .forEach((el) => (el.textContent = ""));
+
+        if (window.resetRegisterRequirements) {
+          window.resetRegisterRequirements();
+        }
+      };
+
+      // ============================================
+      // Enviar formulário de Login
+      // ============================================
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const email = document.getElementById("loginEmail").value;
+          const password = document.getElementById("loginPassword").value;
+
+          const result = await loginUser(email, password);
+          if (result) {
+            setTimeout(() => {
+              window.location.href = "dashboard.html";
+            }, 1500);
+          }
+        });
+
+      // ============================================
+      // Enviar formulário de Registro
+      // ============================================
+
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          isRegistering = true;
+
+          const name = document.getElementById("registerName").value;
+          const email = document.getElementById("registerEmail").value;
+          const password = document.getElementById("registerPassword").value;
+          const passwordConfirm = document.getElementById(
+            "registerPasswordConfirm",
+          ).value;
+
+          const result = await registerUser(email, password, passwordConfirm, name);
+          if (result) {
+            // Limpar formulário
+            document.getElementById("registerForm").reset();
+            if (window.resetRegisterRequirements) {
+              window.resetRegisterRequirements();
+            }
+
+            // Redirecionar direto para o dashboard após sucesso
+            setTimeout(() => {
+              window.location.href = "dashboard.html";
+            }, 1500);
+          } else {
+            isRegistering = false;
+          }
+        });
+
+      // ============================================
+      // Login com Google
+      // ============================================
+
+      window.loginWithGoogleHandler = async function () {
+        const result = await loginWithGoogle();
+        if (result) {
+          setTimeout(() => {
+            window.location.href = "dashboard.html";
+          }, 1500);
+        }
+      };
+
+      // ============================================
+      // Validação Dinâmica de Cadastro
+      // ============================================
+
+      const registerEmail = document.getElementById("registerEmail");
+      const registerPassword = document.getElementById("registerPassword");
+      const registerPasswordConfirm = document.getElementById("registerPasswordConfirm");
+
+      const reqLength = document.getElementById("reqLength");
+      const reqEmail = document.getElementById("reqEmail");
+      const reqMatch = document.getElementById("reqMatch");
+
+      function validateRegisterForm() {
+        const email = registerEmail.value;
+        const password = registerPassword.value;
+        const confirm = registerPasswordConfirm.value;
+
+        // Comprimento da senha
+        if (password.length >= 6) {
+          reqLength.classList.add("valid");
+        } else {
+          reqLength.classList.remove("valid");
+        }
+
+        // Formato do email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (emailRegex.test(email)) {
+          reqEmail.classList.add("valid");
+        } else {
+          reqEmail.classList.remove("valid");
+        }
+
+        // Senhas iguais e não vazias
+        if (password === confirm && password !== "") {
+          reqMatch.classList.add("valid");
+        } else {
+          reqMatch.classList.remove("valid");
+        }
+      }
+
+      window.resetRegisterRequirements = function () {
+        reqLength.classList.remove("valid");
+        reqEmail.classList.remove("valid");
+        reqMatch.classList.remove("valid");
+      };
+
+      if (registerEmail && registerPassword && registerPasswordConfirm) {
+        registerEmail.addEventListener("input", validateRegisterForm);
+        registerPassword.addEventListener("input", validateRegisterForm);
+        registerPasswordConfirm.addEventListener("input", validateRegisterForm);
+      }
+
+      // ============================================
+      // Verificar se já está autenticado
+      // ============================================
+
+      setupAuthListener((user) => {
+        if (user && !isRegistering) {
+          console.log("✓ Usuário já autenticado. Redirecionando...");
+          window.location.href = "dashboard.html";
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dashboard - UniTask">
+  
+  <title>Dashboard - UniTask</title>
+  
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="assets/logo-icon.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  
+  <!-- Chart.js para Gráficos Modernos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="dark">
+  <!-- Loader -->
+  <div id="loader"></div>
+
+  <!-- Container Principal -->
+  <div class="dashboard-container">
+    <!-- Sidebar Retrátil -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-header">
+          <a href="#" class="sidebar-logo">
+            <img src="assets/logo_nobg.png" alt="UniTask Logo" class="sidebar-logo-img logo-expanded" id="logoExpanded">
+            <img src="assets/logo-icon_nobg.png" alt="UniTask Logo" class="sidebar-logo-img logo-collapsed" id="logoCollapsed" style="display: none;">
+          </a>
+          <button class="sidebar-toggle-btn" id="sidebarToggle" onclick="window.toggleSidebar()" aria-label="Recolher menu">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+        </div>
+
+        <ul class="sidebar-menu">
+          <li class="sidebar-menu-item" data-tooltip="Dashboard">
+            <a href="#" class="sidebar-menu-link active" data-section="dashboard" onclick="showSection('dashboard')">
+              <span class="sidebar-icon"><i class="fa-solid fa-chart-column"></i></span>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="sidebar-menu-item" data-tooltip="Minhas Tarefas">
+            <a href="#" class="sidebar-menu-link" data-section="tasks" onclick="showSection('tasks')">
+              <span class="sidebar-icon"><i class="fa-solid fa-crosshairs"></i></span>
+              <span>Minhas Tarefas</span>
+            </a>
+          </li>
+          <li class="sidebar-menu-item" data-tooltip="Pendentes">
+            <a href="#" class="sidebar-menu-link" data-section="pending" onclick="showSection('pending')">
+              <span class="sidebar-icon"><i class="fa-solid fa-hourglass-half"></i></span>
+              <span>Pendentes</span>
+            </a>
+          </li>
+          <li class="sidebar-menu-item" data-tooltip="Concluídas">
+            <a href="#" class="sidebar-menu-link" data-section="completed" onclick="showSection('completed')">
+              <span class="sidebar-icon"><i class="fa-solid fa-check"></i></span>
+              <span>Concluídas</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Rodapé da Sidebar - Usuário & Dropdown -->
+      <div class="sidebar-bottom">
+        <div class="sidebar-user-section">
+          <button class="sidebar-user-trigger" id="userMenuTrigger" onclick="window.toggleProfileDropdown(event)">
+            <div class="user-avatar" id="userAvatar">U</div>
+            <div class="user-details">
+              <h4 id="userName">Carregando...</h4>
+              <p id="userEmail">email@example.com</p>
+            </div>
+          </button>
+          
+          <!-- Dropdown Flutuante -->
+          <div class="profile-dropdown-menu" id="profileDropdown">
+            <button class="profile-dropdown-item" onclick="window.showToast('Configurações de perfil em breve!', 'info')">
+              <i class="fa-regular fa-user"></i> Meu Perfil
+            </button>
+            <button class="profile-dropdown-item" onclick="window.showToast('Preferências salvas!', 'success')">
+              <i class="fa-solid fa-sliders"></i> Ajustes
+            </button>
+          </div>
+        </div>
+        
+        <!-- Botão Sair Fixo na Sidebar -->
+        <button class="sidebar-logout-btn" onclick="logoutHandler()" aria-label="Sair da Conta">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span class="logout-text">Sair</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+      <!-- Header Superior -->
+      <header class="top-header">
+        <div class="header-left" style="display: flex; align-items: center; gap: var(--spacing-md);">
+          <button class="mobile-menu-toggle" onclick="window.toggleMobileMenu()" aria-label="Menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div>
+            <h1 id="greetingMessage">Bem-vindo ao UniTask</h1>
+            <p>Organize tarefas, estudos e projetos com eficiência</p>
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <!-- Busca Global -->
+          <div class="search-bar-container">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Buscar tarefas..." onkeyup="applyFiltersHandler()">
+          </div>
+          
+          <!-- Central de Notificações -->
+          <div style="position: relative;">
+            <button class="header-action-btn" id="notifBtn" onclick="window.toggleNotificationsDropdown(event)" aria-label="Notificações">
+              <i class="fa-regular fa-bell"></i>
+              <span class="btn-badge danger" id="notifBadge" style="display: none;">0</span>
+            </button>
+            
+            <!-- Painel de Notificações -->
+            <div class="notifications-dropdown" id="notifDropdown">
+              <div class="notifications-header">
+                <h3>Notificações</h3>
+                <span class="btn-badge" id="notifPanelCount">0</span>
+              </div>
+              <div class="notifications-list" id="notifList">
+                <div class="notifications-empty">Nenhuma notificação importante no momento.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personalizar Painel -->
+          <button class="btn btn-secondary btn-small" onclick="window.openCustomizerModal()" style="height: 40px; min-height: 40px; gap: 6px;">
+            <i class="fa-solid fa-gear"></i> Personalizar Painel
+          </button>
+          
+          <!-- Botão Nova Tarefa Rápido -->
+          <button class="btn btn-primary btn-small" onclick="openAddModal()" style="height: 40px; min-height: 40px;">
+            <i class="fa-solid fa-plus"></i> Nova Tarefa
+          </button>
+        </div>
+      </header>
+
+      <!-- Métricas / Cards de Estatísticas -->
+      <div class="summary-grid" id="summaryGrid">
+        <div class="summary-card">
+          <div class="summary-card-header">
+            <span class="summary-card-title"><i class="fa-solid fa-list-check"></i> Total de Tarefas</span>
+            <span class="summary-badge up" id="totalTasksBadge">+0%</span>
+          </div>
+          <div class="summary-card-content">
+            <div class="summary-card-value" id="totalTasks">0</div>
+            <div class="summary-progress-bar"><div class="summary-progress-fill" id="totalTasksFill" style="width: 0%"></div></div>
+            <p class="summary-card-subtext" id="totalTasksSubtext">Nenhuma tarefa cadastrada</p>
+          </div>
+        </div>
+        
+        <div class="summary-card completed">
+          <div class="summary-card-header">
+            <span class="summary-card-title"><i class="fa-solid fa-circle-check"></i> Concluídas</span>
+            <span class="summary-badge up" id="completedTasksBadge">100%</span>
+          </div>
+          <div class="summary-card-content">
+            <div class="summary-card-value" id="completedTasks">0</div>
+            <div class="summary-progress-bar"><div class="summary-progress-fill" id="completedTasksFill" style="width: 0%"></div></div>
+            <p class="summary-card-subtext" id="completedTasksSubtext">0% concluído</p>
+          </div>
+        </div>
+        
+        <div class="summary-card pending">
+          <div class="summary-card-header">
+            <span class="summary-card-title"><i class="fa-solid fa-hourglass-half"></i> Pendentes</span>
+            <span class="summary-badge" id="pendingTasksBadge">0%</span>
+          </div>
+          <div class="summary-card-content">
+            <div class="summary-card-value" id="pendingTasks">0</div>
+            <div class="summary-progress-bar"><div class="summary-progress-fill" id="pendingTasksFill" style="width: 0%"></div></div>
+            <p class="summary-card-subtext" id="pendingTasksSubtext">Nenhuma em andamento</p>
+          </div>
+        </div>
+        
+        <div class="summary-card overdue">
+          <div class="summary-card-header">
+            <span class="summary-card-title"><i class="fa-solid fa-triangle-exclamation"></i> Atrasadas</span>
+            <span class="summary-badge danger" id="overdueTasksBadge">Crítico</span>
+          </div>
+          <div class="summary-card-content">
+            <div class="summary-card-value" id="overdueTasks">0</div>
+            <div class="summary-progress-bar"><div class="summary-progress-fill" id="overdueTasksFill" style="width: 0%"></div></div>
+            <p class="summary-card-subtext" id="overdueTasksSubtext">Tudo em dia!</p>
+          </div>
+        </div>
+      </div>
+
+       <!-- Grid Principal do Dashboard -->
+      <div class="dashboard-grid">
+        <!-- Bloco Principal das Tarefas (Workspace) -->
+        <div id="tasksWorkspace">
+          <!-- Abas de Visualização (Lista vs Kanban) -->
+          <div class="view-tabs-container">
+            <button class="view-tab-btn active" id="tabList" onclick="window.toggleViewMode('list')">
+              <i class="fa-solid fa-list"></i> Lista
+            </button>
+            <button class="view-tab-btn" id="tabKanban" onclick="window.toggleViewMode('kanban')">
+              <i class="fa-solid fa-grip-vertical"></i> Quadro Kanban
+            </button>
+          </div>
+
+          <!-- Filtros de Tarefas (Apenas visíveis na visualização Lista) -->
+          <div class="filters-section" id="filtersSection">
+            <div class="filters-grid">
+              <div class="filter-group">
+                <label><i class="fa-solid fa-layer-group"></i> Matéria</label>
+                <select id="subjectFilter" onchange="applyFiltersHandler()">
+                  <option value="all">Todas as matérias</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label><i class="fa-solid fa-bars-progress"></i> Status</label>
+                <select id="statusFilter" onchange="applyFiltersHandler()">
+                  <option value="all">Todos os status</option>
+                  <option value="pendente">Pendentes</option>
+                  <option value="em_andamento">Em Andamento</option>
+                  <option value="concluída">Concluídas</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label><i class="fa-solid fa-signal"></i> Prioridade</label>
+                <select id="priorityFilter" onchange="applyFiltersHandler()">
+                  <option value="all">Todas as prioridades</option>
+                  <option value="high">Alta</option>
+                  <option value="medium">Média</option>
+                  <option value="low">Baixa</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label><i class="fa-regular fa-calendar"></i> Ordenar</label>
+                <select id="sortFilter" onchange="applyFiltersHandler()">
+                  <option value="dueDate">Prazo (próximo)</option>
+                  <option value="priority">Prioridade</option>
+                  <option value="recent">Mais recente</option>
+                </select>
+              </div>
+
+              <div class="filter-buttons">
+                <button class="btn btn-secondary" onclick="resetFilters()">
+                  <i class="fa-solid fa-sync"></i> Limpar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Renderização 1: Lista Clássica de Tarefas -->
+          <div class="tasks-grid" id="tasksContainer">
+            <!-- Skeleton Loading Cards -->
+            <div class="skeleton-card">
+              <div class="skeleton-text title"></div>
+              <div class="skeleton-text"></div>
+              <div class="skeleton-text short"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-text title"></div>
+              <div class="skeleton-text"></div>
+              <div class="skeleton-text short"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-text title"></div>
+              <div class="skeleton-text"></div>
+              <div class="skeleton-text short"></div>
+            </div>
+          </div>
+
+          <!-- Renderização 2: Quadro Kanban Moderno -->
+          <div class="kanban-board" id="kanbanBoard">
+            <!-- Coluna Pendente -->
+            <div class="kanban-column" data-status="pendente" ondragover="window.onDragOver(event)" ondragleave="window.onDragLeave(event)" ondrop="window.onDrop(event, 'pendente')">
+              <div class="kanban-column-header">
+                <span class="kanban-column-title column-pending"><span class="dot"></span> Pendente</span>
+                <span class="kanban-task-count" id="countPending">0</span>
+              </div>
+              <div class="kanban-cards-list" id="listPending"></div>
+            </div>
+
+            <!-- Coluna Em Andamento -->
+            <div class="kanban-column" data-status="em_andamento" ondragover="window.onDragOver(event)" ondragleave="window.onDragLeave(event)" ondrop="window.onDrop(event, 'em_andamento')">
+              <div class="kanban-column-header">
+                <span class="kanban-column-title column-progress"><span class="dot"></span> Em Andamento</span>
+                <span class="kanban-task-count" id="countProgress">0</span>
+              </div>
+              <div class="kanban-cards-list" id="listProgress"></div>
+            </div>
+
+            <!-- Coluna Concluído -->
+            <div class="kanban-column" data-status="concluída" ondragover="window.onDragOver(event)" ondragleave="window.onDragLeave(event)" ondrop="window.onDrop(event, 'concluída')">
+              <div class="kanban-column-header">
+                <span class="kanban-column-title column-completed"><span class="dot"></span> Concluída</span>
+                <span class="kanban-task-count" id="countCompleted">0</span>
+              </div>
+              <div class="kanban-cards-list" id="listCompleted"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Widget do Calendário -->
+        <div class="calendar-widget" id="widgetCalendar">
+          <div class="calendar-header">
+            <h3 id="calendarMonthYear">Junho 2026</h3>
+            <div class="calendar-nav">
+              <button class="calendar-nav-btn" onclick="window.changeCalendarMonth(-1)" aria-label="Mês anterior"><i class="fa-solid fa-chevron-left"></i></button>
+              <button class="calendar-nav-btn" onclick="window.changeCalendarMonth(1)" aria-label="Próximo mês"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="calendar-days-header">
+            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+
+        <!-- Widget de Próximos Prazos -->
+        <div class="deadline-widget" id="widgetDeadlines">
+          <h3>Próximas Entregas 📅</h3>
+          <div class="deadline-list" id="upcomingDeadlinesList">
+            <div class="deadline-empty">Carregando prazos...</div>
+          </div>
+        </div>
+
+        <!-- Matérias e Categorias -->
+        <section class="subjects-section" id="widgetSubjects">
+          <div class="subjects-header" style="flex-wrap: wrap;">
+            <div>
+              <h2>Matérias e Categorias</h2>
+              <span id="subjectsCount" class="subjects-count">0 cadastradas</span>
+            </div>
+            <button class="btn btn-secondary btn-small" onclick="openSubjectModal()" style="height: 34px; min-height: 34px;">
+              <i class="fa-solid fa-plus"></i> Nova
+            </button>
+          </div>
+          <div class="subjects-list" id="subjectsList">
+            <div class="subjects-empty">
+              <span class="subjects-empty-icon"><i class="fa-solid fa-spinner fa-spin"></i></span>
+              <span>Carregando matérias...</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Seção de Gráficos (Dashboard Inteligente) -->
+        <div class="charts-section" id="widgetCharts">
+          <!-- Gráfico de Produtividade -->
+          <div class="chart-card">
+            <h3>Produtividade Semanal (Tarefas Concluídas)</h3>
+            <div class="chart-wrapper">
+              <canvas id="productivityChart"></canvas>
+            </div>
+          </div>
+          
+          <!-- Gráfico de Distribuição -->
+          <div class="chart-card">
+            <h3>Distribuição de Tarefas</h3>
+            <div class="chart-wrapper">
+              <canvas id="distributionChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Espaço para footer -->
+      <div class="page-bottom-spacer"></div>
+    </main>
+  </div>
+
+  <!-- Modal de Adição/Edição de Tarefa -->
+  <div id="taskModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Adicionar Tarefa</h2>
+        <button class="modal-close" onclick="closeTaskModal()" aria-label="Fechar modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="taskForm" class="modal-body form-stack">
+        <input type="hidden" id="taskId">
+
+        <div class="form-group">
+          <label for="taskTitle">Título da Tarefa *</label>
+          <input type="text" id="taskTitle" placeholder="Digite o título..." required>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label-row">
+            <label for="taskSubject">Matéria ou Categoria *</label>
+            <button type="button" class="inline-action" onclick="openSubjectModal()">
+              <i class="fa-solid fa-plus"></i>
+              Nova Matéria
+            </button>
+          </div>
+          <select id="taskSubject" required>
+            <option value="">Carregando matérias...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="taskDescription">Descrição</label>
+          <textarea id="taskDescription" placeholder="Descreva a tarefa..."></textarea>
+        </div>
+
+        <div class="form-grid two-columns">
+          <div class="form-group">
+            <label for="taskDueDate">Data de Entrega *</label>
+            <input type="text" id="taskDueDate" placeholder="Selecione a data..." required autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label for="taskPriority">Prioridade</label>
+            <select id="taskPriority">
+              <option value="medium">Média</option>
+              <option value="high">Alta</option>
+              <option value="low">Baixa</option>
+            </select>
+          </div>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" onclick="submitTaskForm()">
+          Salvar Tarefa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Matéria/Categoria -->
+  <div id="subjectModal" class="modal">
+    <div class="modal-content subject-modal-content">
+      <div class="modal-header">
+        <h2 id="subjectModalTitle">Nova Matéria</h2>
+        <button class="modal-close" onclick="closeSubjectModal()" aria-label="Fechar modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="subjectForm" class="modal-body form-stack">
+        <input type="hidden" id="subjectId">
+
+        <div class="form-group">
+          <label for="subjectName">Nome *</label>
+          <input type="text" id="subjectName" placeholder="Ex.: Trabalho, Clientes, Estudos..." required>
+        </div>
+
+        <div class="form-grid two-columns">
+          <div class="form-group">
+            <label for="subjectColor">Cor</label>
+            <input type="color" id="subjectColor" value="#3b82f6">
+          </div>
+
+          <div class="form-group">
+            <label for="subjectIcon">Ícone</label>
+            <select id="subjectIcon">
+              <option value="fa-regular fa-folder">Pasta</option>
+              <option value="fa-solid fa-book-open">Livro</option>
+              <option value="fa-solid fa-briefcase">Trabalho</option>
+              <option value="fa-solid fa-graduation-cap">Estudos</option>
+              <option value="fa-solid fa-code">Código</option>
+              <option value="fa-solid fa-user">Pessoal</option>
+              <option value="fa-solid fa-users">Clientes</option>
+              <option value="fa-solid fa-church">Igreja</option>
+              <option value="fa-solid fa-bullseye">Meta</option>
+              <option value="fa-solid fa-pen-nib">Criação</option>
+              <option value="fa-solid fa-flask">Pesquisa</option>
+              <option value="fa-solid fa-layer-group">Projetos</option>
+            </select>
+          </div>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeSubjectModal()">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" onclick="submitSubjectForm()">
+          Salvar Matéria
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Personalização do Painel -->
+  <div id="customizerModal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-gear"></i> Personalizar Painel</h2>
+        <button class="modal-close" onclick="window.closeCustomizerModal()" aria-label="Fechar modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+        <p style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: var(--spacing-sm);">Selecione os painéis que deseja exibir em seu dashboard:</p>
+        <div class="customizer-item" style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border);">
+          <span>Gráficos de Produtividade</span>
+          <input type="checkbox" id="checkCharts" checked onchange="window.toggleWidget('widgetCharts', this.checked)">
+        </div>
+        <div class="customizer-item" style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border);">
+          <span>Calendário de Tarefas</span>
+          <input type="checkbox" id="checkCalendar" checked onchange="window.toggleWidget('widgetCalendar', this.checked)">
+        </div>
+        <div class="customizer-item" style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border);">
+          <span>Próximas Entregas</span>
+          <input type="checkbox" id="checkDeadlines" checked onchange="window.toggleWidget('widgetDeadlines', this.checked)">
+        </div>
+        <div class="customizer-item" style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-sm) 0;">
+          <span>Matérias e Categorias</span>
+          <input type="checkbox" id="checkSubjects" checked onchange="window.toggleWidget('widgetSubjects', this.checked)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação de Logout -->
+  <div id="logoutModal" class="modal">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <div class="modal-body" style="padding: var(--spacing-xl) 0 0 0; display: flex; flex-direction: column; gap: var(--spacing-md); align-items: center;">
+        <div style="font-size: 3rem; color: var(--danger); margin-bottom: var(--spacing-sm);"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
+        <h2 style="margin: 0; font-size: 1.5rem; color: var(--color-text-primary);">Encerrar Sessão</h2>
+        <p style="font-size: 0.94rem; color: var(--color-text-secondary); margin: 0; line-height: 1.5;">Tem certeza que deseja sair da sua conta no UniTask?</p>
+      </div>
+      <div class="modal-footer" style="justify-content: center; gap: var(--spacing-md); margin-top: var(--spacing-xl);">
+        <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()" style="flex: 1; min-height: 44px;">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-danger" onclick="confirmLogout()" style="flex: 1; min-height: 44px; background-color: var(--danger); color: white;">
+          Sair
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts do Dashboard -->
+  <script type="module">
+    import {
+      initializeDashboard,
+      addTask,
+      editTask,
+      addSubject,
+      editSubject,
+      deleteSubject,
+      getTasks,
+      getSubjects,
+      getSubjectById,
+      getSubjectForTask,
+      getDefaultSubjectColor,
+      getDefaultSubjectIcon,
+      applyFilters,
+      toggleTaskStatus,
+      deleteTask
+    } from './js/dashboard.js';
+    
+    import {
+      logoutUser,
+      showToast
+    } from './js/auth.js';
+
+    import { initDatePicker } from './js/datepicker.js';
+
+    // ============================================
+    // Inicialização da Sidebar e Modos de Visualização
+    // ============================================
+
+    window.toggleSidebar = function() {
+      const sidebar = document.getElementById("sidebar");
+      const logoExpanded = document.getElementById("logoExpanded");
+      const logoCollapsed = document.getElementById("logoCollapsed");
+      
+      sidebar.classList.toggle("collapsed");
+      
+      if (sidebar.classList.contains("collapsed")) {
+        logoExpanded.style.display = "none";
+        logoCollapsed.style.display = "block";
+      } else {
+        logoExpanded.style.display = "block";
+        logoCollapsed.style.display = "none";
+      }
+    };
+
+    window.toggleProfileDropdown = function(event) {
+      event.stopPropagation();
+      document.getElementById("profileDropdown").classList.toggle("show");
+    };
+
+    window.toggleNotificationsDropdown = function(event) {
+      event.stopPropagation();
+      document.getElementById("notifDropdown").classList.toggle("show");
+    };
+
+    // Fechar dropdowns ao clicar fora
+    window.addEventListener("click", () => {
+      document.getElementById("profileDropdown").classList.remove("show");
+      document.getElementById("notifDropdown").classList.remove("show");
+    });
+
+    // Toggle de Modo (Lista vs Kanban)
+    window.toggleViewMode = function(mode) {
+      const tabList = document.getElementById("tabList");
+      const tabKanban = document.getElementById("tabKanban");
+      const filtersSection = document.getElementById("filtersSection");
+      const tasksContainer = document.getElementById("tasksContainer");
+      const kanbanBoard = document.getElementById("kanbanBoard");
+
+      if (mode === 'kanban') {
+        tabList.classList.remove("active");
+        tabKanban.classList.add("active");
+        filtersSection.style.display = "none";
+        tasksContainer.style.display = "none";
+        kanbanBoard.style.display = "grid";
+      } else {
+        tabList.classList.add("active");
+        tabKanban.classList.remove("active");
+        filtersSection.style.display = "block";
+        tasksContainer.style.display = "grid";
+        kanbanBoard.style.display = "none";
+      }
+    };
+
+    // Personalizar Widgets do Dashboard
+    window.toggleWidget = function(widgetId, isVisible) {
+      const widget = document.getElementById(widgetId);
+      const checkbox = document.getElementById("check" + widgetId.replace("widget", ""));
+      
+      if (widget) {
+        if (isVisible) {
+          widget.classList.remove("widget-hidden");
+        } else {
+          widget.classList.add("widget-hidden");
+        }
+      }
+      
+      if (checkbox) checkbox.checked = isVisible;
+      
+      // Salvar preferência
+      localStorage.setItem("pref_" + widgetId, isVisible ? "true" : "false");
+    };
+
+    // Carregar preferências de layout salvas
+    function loadWidgetPreferences() {
+      const widgets = ["widgetCharts", "widgetCalendar", "widgetDeadlines", "widgetSubjects"];
+      widgets.forEach(w => {
+        const pref = localStorage.getItem("pref_" + w);
+        if (pref !== null) {
+          window.toggleWidget(w, pref === "true");
+        }
+      });
+    }
+
+    // ============================================
+    // Inicializar Dashboard
+    // ============================================
+
+    initializeDashboard((user) => {
+      if (!user) {
+        console.log('Usuário não autenticado. Redirecionando...');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Atualizar informações do usuário
+      const userAvatar = document.getElementById('userAvatar');
+      const userName = document.getElementById('userName');
+      const userEmail = document.getElementById('userEmail');
+      const greetingMessage = document.getElementById('greetingMessage');
+
+      const name = user.displayName || user.email.split('@')[0];
+      const firstName = name.split(' ')[0];
+      
+      userName.textContent = name;
+      userAvatar.textContent = name.charAt(0).toUpperCase();
+      userEmail.textContent = user.email;
+
+      // Saudação Dinâmica
+      const hour = new Date().getHours();
+      let greeting = "Olá";
+      if (hour >= 5 && hour < 12) {
+        greeting = "Bom dia";
+      } else if (hour >= 12 && hour < 18) {
+        greeting = "Boa tarde";
+      } else {
+        greeting = "Boa noite";
+      }
+      greetingMessage.textContent = `${greeting}, ${firstName} 👋`;
+
+      loadWidgetPreferences();
+
+      // Inicializar Custom Datepicker
+      const dateInput = document.getElementById("taskDueDate");
+      if (dateInput) {
+        initDatePicker(dateInput);
+      }
+
+      // Mostrar toast de boas-vindas
+      showToast(`Bem-vindo, ${name}!`, 'success');
+    });
+
+    // ============================================
+    // Logout
+    // ============================================
+
+    window.logoutHandler = function() {
+      document.getElementById('logoutModal').classList.add('show');
+    };
+
+    window.closeLogoutModal = function() {
+      document.getElementById('logoutModal').classList.remove('show');
+    };
+
+    window.confirmLogout = async function() {
+      closeLogoutModal();
+      showToast('Encerrando sessão...', 'info');
+      await logoutUser();
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 1200);
+    };
+
+    // ============================================
+    // Modal de Tarefa
+    // ============================================
+
+    window.openAddModal = function() {
+      document.getElementById('modalTitle').textContent = 'Adicionar Tarefa';
+      document.getElementById('taskForm').reset();
+      document.getElementById('taskId').value = '';
+
+      const today = getTodayInputValue();
+      document.getElementById('taskDueDate').min = today;
+
+      if (getSubjects().length === 0) {
+        showToast('Crie uma matéria antes de cadastrar tarefas.', 'info');
+      }
+
+      document.getElementById('taskModal').classList.add('show');
+    };
+
+    window.openEditModal = function(taskId) {
+      const tasks = getTasks();
+      const task = tasks.find(t => t.id === taskId);
+      
+      if (!task) return;
+
+      document.getElementById('modalTitle').textContent = 'Editar Tarefa';
+      document.getElementById('taskId').value = taskId;
+      document.getElementById('taskTitle').value = task.title;
+      document.getElementById('taskDescription').value = task.description || '';
+      document.getElementById('taskDueDate').value = task.dueDate;
+      document.getElementById('taskPriority').value = task.priority || 'medium';
+
+      const today = getTodayInputValue();
+      document.getElementById('taskDueDate').min = today;
+
+      const linkedSubject = getSubjectForTask(task);
+      document.getElementById('taskSubject').value = linkedSubject?.id || '';
+
+      document.getElementById('taskModal').classList.add('show');
+    };
+
+    window.closeTaskModal = function() {
+      document.getElementById('taskModal').classList.remove('show');
+    };
+
+    window.submitTaskForm = async function() {
+      const taskId = document.getElementById('taskId').value;
+      const title = document.getElementById('taskTitle').value;
+      const subjectId = document.getElementById('taskSubject').value;
+      const description = document.getElementById('taskDescription').value;
+      const dueDate = document.getElementById('taskDueDate').value;
+      const priority = document.getElementById('taskPriority').value;
+      const selectedSubject = getSubjectById(subjectId);
+
+      if (!title || !subjectId || !selectedSubject || !dueDate) {
+        showToast('Preencha todos os campos obrigatórios!', 'warning');
+        return;
+      }
+
+      let result;
+      if (taskId) {
+        result = await editTask(taskId, {
+          title,
+          subjectId,
+          description,
+          dueDate,
+          priority
+        });
+      } else {
+        result = await addTask({
+          title,
+          subjectId,
+          description,
+          dueDate,
+          priority
+        });
+      }
+
+      if (result) {
+        closeTaskModal();
+      }
+    };
+
+    // ============================================
+    // Modal de Matéria
+    // ============================================
+
+    window.openSubjectModal = function() {
+      document.getElementById('subjectModalTitle').textContent = 'Nova Matéria';
+      document.getElementById('subjectForm').reset();
+      document.getElementById('subjectId').value = '';
+      document.getElementById('subjectColor').value = getDefaultSubjectColor();
+      document.getElementById('subjectIcon').value = getDefaultSubjectIcon();
+      document.getElementById('subjectModal').classList.add('show');
+
+      setTimeout(() => {
+        document.getElementById('subjectName').focus();
+      }, 50);
+    };
+
+    window.openEditSubjectModal = function(subjectId) {
+      const subject = getSubjectById(subjectId);
+      if (!subject) return;
+
+      document.getElementById('subjectModalTitle').textContent = 'Editar Matéria';
+      document.getElementById('subjectId').value = subject.id;
+      document.getElementById('subjectName').value = subject.name;
+      document.getElementById('subjectColor').value = subject.color || getDefaultSubjectColor();
+      document.getElementById('subjectIcon').value = subject.icon || getDefaultSubjectIcon();
+      document.getElementById('subjectModal').classList.add('show');
+    };
+
+    window.closeSubjectModal = function() {
+      document.getElementById('subjectModal').classList.remove('show');
+    };
+
+    window.submitSubjectForm = async function() {
+      const subjectId = document.getElementById('subjectId').value;
+      const name = document.getElementById('subjectName').value;
+      const color = document.getElementById('subjectColor').value;
+      const icon = document.getElementById('subjectIcon').value;
+
+      if (!name.trim()) {
+        showToast('Digite o nome da matéria.', 'warning');
+        return;
+      }
+
+      const result = subjectId
+        ? await editSubject(subjectId, { name, color, icon })
+        : await addSubject({ name, color, icon });
+
+      if (result) {
+        closeSubjectModal();
+      }
+    };
+
+    window.confirmDeleteSubject = async function(subjectId) {
+      const subject = getSubjectById(subjectId);
+      if (!subject) return;
+
+      const linkedTasks = getTasks().filter(task => task.subjectId === subjectId).length;
+      const message = linkedTasks > 0
+        ? `Excluir "${subject.name}"? ${linkedTasks} tarefa(s) vinculada(s) ficarão sem categoria.`
+        : `Excluir "${subject.name}"?`;
+
+      if (confirm(message)) {
+        await deleteSubject(subjectId);
+      }
+    };
+
+    // Fechar modal ao clicar fora
+    window.addEventListener('click', (e) => {
+      const taskModal = document.getElementById('taskModal');
+      const subjectModal = document.getElementById('subjectModal');
+      const customizerModal = document.getElementById('customizerModal');
+      const logoutModal = document.getElementById('logoutModal');
+
+      if (e.target === taskModal) {
+        closeTaskModal();
+      }
+
+      if (e.target === subjectModal) {
+        closeSubjectModal();
+      }
+
+      if (e.target === customizerModal) {
+        closeCustomizerModal();
+      }
+
+      if (e.target === logoutModal) {
+        closeLogoutModal();
+      }
+    });
+
+    window.openCustomizerModal = function() {
+      document.getElementById('customizerModal').classList.add('show');
+    };
+
+    window.closeCustomizerModal = function() {
+      document.getElementById('customizerModal').classList.remove('show');
+    };
+
+    window.toggleMobileMenu = function() {
+      const sidebar = document.getElementById("sidebar");
+      sidebar.classList.toggle("mobile-open");
+      
+      let backdrop = document.getElementById("sidebarBackdrop");
+      if (!backdrop) {
+        backdrop = document.createElement("div");
+        backdrop.id = "sidebarBackdrop";
+        backdrop.className = "sidebar-backdrop";
+        backdrop.addEventListener("click", window.toggleMobileMenu);
+        document.body.appendChild(backdrop);
+      }
+      backdrop.classList.toggle("show");
+    };
+
+
+
+    // ============================================
+    // Filtros
+    // ============================================
+
+    window.applyFiltersHandler = function() {
+      const filters = {
+        search: document.getElementById('searchInput').value,
+        subject: document.getElementById('subjectFilter').value,
+        status: document.getElementById('statusFilter').value,
+        priority: document.getElementById('priorityFilter').value,
+        sort: document.getElementById('sortFilter').value
+      };
+
+      applyFilters(filters);
+    };
+
+    window.resetFilters = function() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('subjectFilter').value = 'all';
+      document.getElementById('statusFilter').value = 'all';
+      document.getElementById('priorityFilter').value = 'all';
+      document.getElementById('sortFilter').value = 'dueDate';
+
+      applyFilters({
+        search: '',
+        subject: 'all',
+        status: 'all',
+        priority: 'all',
+        sort: 'dueDate'
+      });
+      showToast('Filtros limpos!', 'info');
+    };
+
+    // ============================================
+    // Seções de navegação da Sidebar
+    // ============================================
+
+    window.showSection = function(section) {
+      if (section === 'tasks') {
+        document.getElementById('statusFilter').value = 'all';
+      } else if (section === 'pending') {
+        document.getElementById('statusFilter').value = 'pendente';
+      } else if (section === 'completed') {
+        document.getElementById('statusFilter').value = 'concluída';
+      } else {
+        document.getElementById('statusFilter').value = 'all';
+      }
+
+      applyFiltersHandler();
+
+      document.querySelectorAll('.sidebar-menu-link').forEach(link => {
+        link.classList.remove('active');
+      });
+
+      const activeLink = document.querySelector(`.sidebar-menu-link[data-section="${section}"]`);
+      if (activeLink) activeLink.classList.add('active');
+      
+      // Se clicarmos em Dashboard, garante a visualização padrão
+      if (section === 'dashboard') {
+        window.toggleViewMode('list');
+      }
+    };
+
+    window.toggleTaskStatus = async function(taskId, currentStatus) {
+      await toggleTaskStatus(taskId, currentStatus);
+    };
+
+    window.confirmDelete = function(taskId) {
+      const confirmed = confirm("Tem certeza que deseja deletar esta tarefa?");
+      if (confirmed) {
+        deleteTask(taskId);
+      }
+    };
+
+    // ============================================
+    // Outros utilitários
+    // ============================================
+
+    document.getElementById('taskForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      submitTaskForm();
+    });
+
+    document.getElementById('subjectForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      submitSubjectForm();
+    });
+
+    function getTodayInputValue() {
+      const now = new Date();
+      const timezoneOffset = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - timezoneOffset).toISOString().split('T')[0];
+    }
+  </script>
+</body>
+</html>
