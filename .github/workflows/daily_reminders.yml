@@ -1,0 +1,40 @@
+name: Envio Diário de Lembretes UniTask
+
+on:
+  schedule:
+    # Executa todos os dias às 11:00 UTC (08:00 no horário de Brasília)
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+    # Permite executar manualmente a qualquer momento pela interface do GitHub
+
+jobs:
+  send-reminders:
+    name: Buscar pendências e enviar e-mails
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Instalar dependências de envio
+        run: |
+          npm install firebase-admin resend nodemailer
+
+      - name: Executar script de lembretes
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          APP_URL: ${{ secrets.APP_URL }}
+        run: node scripts/send_reminders.js
