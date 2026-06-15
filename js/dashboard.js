@@ -1011,6 +1011,9 @@ function renderNotificationsAndDeadlines() {
   const notifications = [];
   const upcomingDeadlines = [];
 
+  // Obter IDs de notificações já lidas
+  const readTaskIds = JSON.parse(localStorage.getItem("unitask_read_notif_ids") || "[]");
+
   tasks.forEach((task) => {
     if (task.status === "concluída") return;
 
@@ -1025,14 +1028,16 @@ function renderNotificationsAndDeadlines() {
         type: "overdue",
         title: `Tarefa Atrasada: "${task.title}"`,
         text: `Venceu em ${dueDate.toLocaleDateString("pt-BR")}.`,
-        task
+        task,
+        isRead: readTaskIds.includes(task.id)
       });
     } else if (diffDays <= 1) {
       notifications.push({
         type: "near",
         title: `Vence em breve: "${task.title}"`,
         text: diffDays === 0 ? "Entrega HOJE!" : "Entrega AMANHÃ!",
-        task
+        task,
+        isRead: readTaskIds.includes(task.id)
       });
     }
 
@@ -1046,40 +1051,83 @@ function renderNotificationsAndDeadlines() {
 
   upcomingDeadlines.sort((a, b) => a.days - b.days);
 
+  // Filtrar para contar apenas notificações não lidas
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
   if (notifList) {
     notifList.innerHTML = "";
     if (notifications.length === 0) {
-      notifList.innerHTML = `<div class="notifications-empty">Nenhuma notificação importante no momento.</div>`;
+      notifList.innerHTML = `<div class="notifications-empty">Nenhuma notificação no momento.</div>`;
       if (notifBadge) notifBadge.style.display = "none";
       if (notifPanelCount) notifPanelCount.textContent = "0";
     } else {
       notifications.forEach((notif) => {
         const item = document.createElement("div");
-        item.className = `notification-item ${notif.type}`;
+        item.className = `notification-item ${notif.type} ${notif.isRead ? "read" : "unread"}`;
         item.innerHTML = `
-          <div class="notification-item-icon">
+          <div class="notification-icon-wrapper ${notif.type === "overdue" ? "danger" : "warning"}">
             <i class="${notif.type === "overdue" ? "fa-solid fa-triangle-exclamation" : "fa-solid fa-circle-exclamation"}"></i>
           </div>
-          <div class="notification-item-content">
+          <div class="notification-content">
             <h4>${escapeHtml(notif.title)}</h4>
             <p>${escapeHtml(notif.text)}</p>
           </div>
         `;
         item.addEventListener("click", () => {
-          window.openEditModal(notif.task.id);
+          // Marcar como lida na tela principal e abrir detalhes
+          window.markNotificationAsRead(notif.task.id);
+          window.openTaskDetailsModal(notif.task.id);
         });
         notifList.appendChild(item);
       });
 
       if (notifBadge) {
-        notifBadge.textContent = notifications.length;
-        notifBadge.style.display = "flex";
+        notifBadge.textContent = unreadCount;
+        notifBadge.style.display = unreadCount > 0 ? "flex" : "none";
       }
       if (notifPanelCount) {
-        notifPanelCount.textContent = notifications.length;
+        notifPanelCount.textContent = unreadCount;
       }
     }
   }
+
+  // Métodos globais expostos para marcação de leitura de notificações
+  window.markNotificationAsRead = function(taskId) {
+    const ids = JSON.parse(localStorage.getItem("unitask_read_notif_ids") || "[]");
+    if (!ids.includes(taskId)) {
+      ids.push(taskId);
+      localStorage.setItem("unitask_read_notif_ids", JSON.stringify(ids));
+      renderNotificationsAndDeadlines();
+    }
+  };
+
+  window.markAllNotificationsAsRead = function() {
+    const ids = JSON.parse(localStorage.getItem("unitask_read_notif_ids") || "[]");
+    
+    // Obter data de hoje zerada
+    const nowZeroed = new Date();
+    nowZeroed.setHours(0, 0, 0, 0);
+
+    tasks.forEach((task) => {
+      if (task.status === "concluída") return;
+      const dueDate = parseLocalDate(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      const diffTime = dueDate - nowZeroed;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 1) { // Apenas tarefas atrasadas ou que vencem hoje/amanhã
+        if (!ids.includes(task.id)) {
+          ids.push(task.id);
+        }
+      }
+    });
+
+    localStorage.setItem("unitask_read_notif_ids", JSON.stringify(ids));
+    renderNotificationsAndDeadlines();
+    if (window.showToast) {
+      window.showToast("Todas as notificações marcadas como lidas!", "success");
+    }
+  };
 
   if (upcomingDeadlinesList) {
     upcomingDeadlinesList.innerHTML = "";
